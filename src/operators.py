@@ -21,11 +21,11 @@ def pair(target : int, control : List[int], state : State) -> Iterable[Tuple[int
     # compute a mask for when all controls are 1
     for c in control:
         control_bin |= 1 << c
-
     # TODO: fix this to not yield duplicates of pairs
     for idx,_ in state.items():
-        # if all control bits in idx are 1
-        if control_bin & idx == control_bin:
+        other = idx ^ target_bin
+        # if all control bits in idx are 1 and pair is not already in list
+        if control_bin & idx == control_bin and (other > idx or other not in state):
             yield (idx, idx ^ target_bin)
     return None
 
