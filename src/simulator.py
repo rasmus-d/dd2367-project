@@ -21,7 +21,7 @@ class QuantumSimulator():
     # this queue can later be optimized; reordered etc
     operator_queue : List[Union[Operator, Measurement]]
 
-    def __init__(self,num_qubits,initial_state={0:1}) -> None:
+    def __init__(self, num_qubits:int ,initial_state:State = State()) -> None:
         self.num_qubits = num_qubits
         self.state = initial_state
         self.operator_queue = []

@@ -4,6 +4,7 @@
 
 from typing import Iterable, List, Tuple
 from math import cos, pi, sin, sqrt
+import copy
 
 from src.state import State
 
@@ -14,6 +15,7 @@ def pair(target : int, control : List[int], state : State) -> Iterable[Tuple[int
 
         Parameters:
             target (int): The target qubit, zero indexed.
+            control (List[int]): The control qubits, zero indexed.
             state  (State): The state.
     '''
     target_bin = 1 << target
@@ -21,12 +23,14 @@ def pair(target : int, control : List[int], state : State) -> Iterable[Tuple[int
     # compute a mask for when all controls are 1
     for c in control:
         control_bin |= 1 << c
-    # TODO: fix this to not yield duplicates of pairs
     for idx,_ in state.items():
         other = idx ^ target_bin
         # if all control bits in idx are 1 and pair is not already in list
-        if control_bin & idx == control_bin and (other > idx or other not in state):
-            yield (idx, idx ^ target_bin)
+        if control_bin & idx == control_bin and (other > idx or other not in state.items()):
+            if other < idx:
+                yield (other, idx)
+            else:
+                yield (idx, other)
     return None
 
 
@@ -73,10 +77,10 @@ class X(Operator):
         self.target = target
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            new_state[i] = state.get(j,0)
-            new_state[j] = state.get(i,0)
+            new_state.set(i, state.get(j))
+            new_state.set(j, state.get(i))
         return new_state
 
 class Y(Operator):
@@ -84,10 +88,10 @@ class Y(Operator):
         self.target = target
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            new_state[i] = state.get(j,0) * -1j
-            new_state[j] = state.get(i,0) * 1j
+            new_state.set(i, state.get(j) * -1j)
+            new_state.set(j, state.get(i) * 1j)
         return new_state
 
 class Z(Operator):
@@ -95,10 +99,10 @@ class Z(Operator):
         self.target = target
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            new_state[i] = state.get(i,0)
-            new_state[j] = -state.get(j,0)
+            new_state.set(i, state.get(i))
+            new_state.set(j, -state.get(j))
         return new_state
 
 class S(Operator):
@@ -106,10 +110,10 @@ class S(Operator):
         self.target = target
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            new_state[i] = state.get(i,0)
-            new_state[j] = state.get(j,0) * 1j
+            new_state.set(i, state.get(i))
+            new_state.set(j, state.get(j) * 1j)
         return new_state
 
 class T(Operator):
@@ -117,10 +121,10 @@ class T(Operator):
         self.target = target
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            new_state[i] = state.get(i,0)
-            new_state[j] = state.get(j,0) * (cos(pi/4) + sin(pi/4)*1j)
+            new_state.set(i, state.get(i))
+            new_state.set(j, state.get(j) * (cos(pi/4) + sin(pi/4)*1j))
         return new_state
 
 class H(Operator):
@@ -128,10 +132,10 @@ class H(Operator):
         self.target = target
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            new_state[i] = (1/sqrt(2)) * (state.get(i,0) + state.get(j,0))
-            new_state[j] = (1/sqrt(2)) * (state.get(i,0) - state.get(j,0))
+            new_state.set(i, (1/sqrt(2)) * (state.get(i) + state.get(j)))
+            new_state.set(j, (1/sqrt(2)) * (state.get(i) - state.get(j)))
         return new_state
 
 class RX(Operator):
@@ -141,10 +145,10 @@ class RX(Operator):
         self.theta = theta
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            new_state[i] = state.get(i,0) * cos(self.theta/2) - state.get(j,0) * sin(self.theta/2) * 1j
-            new_state[j] = state.get(j,0) * cos(self.theta/2) - state.get(i,0) * sin(self.theta/2) * 1j
+            new_state.set(i, state.get(i) * cos(self.theta/2) - state.get(j) * sin(self.theta/2) * 1j)
+            new_state.set(j, state.get(j) * cos(self.theta/2) - state.get(i) * sin(self.theta/2) * 1j)
         return new_state
 
 class RY(Operator):
@@ -154,10 +158,10 @@ class RY(Operator):
         self.theta = theta
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            new_state[i] = state.get(i,0) * cos(self.theta/2) - state.get(j,0) * sin(self.theta/2)
-            new_state[j] = state.get(j,0) * cos(self.theta/2) + state.get(i,0) * sin(self.theta/2)
+            new_state.set(i, state.get(i) * cos(self.theta/2) - state.get(j) * sin(self.theta/2))
+            new_state.set(j, state.get(j) * cos(self.theta/2) + state.get(i) * sin(self.theta/2))
         return new_state
 
 class RZ(Operator):
@@ -167,10 +171,10 @@ class RZ(Operator):
         self.theta = theta
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            new_state[i] = state.get(i,0) * (cos(-self.theta/2) + sin(-self.theta/2)*1j)
-            new_state[j] = state.get(j,0) * (cos(self.theta/2) + sin(self.theta/2)*1j)
+            new_state.set(i, state.get(i) * (cos(-self.theta/2) + sin(-self.theta/2)*1j))
+            new_state.set(j, state.get(j) * (cos(self.theta/2) + sin(self.theta/2)*1j))
         return new_state
 
 class P(Operator):
@@ -180,11 +184,10 @@ class P(Operator):
         self.theta = theta
         super().__init__(target, control)
     def apply(self, state: State) -> State:
-        new_state = state.copy()
+        new_state = copy.deepcopy(state)
         for i, j in pair(self.target, self.control, state):
-            print(i,j)
-            new_state[i] = state.get(i,0) 
-            new_state[j] = state.get(j,0) * (cos(self.theta) + sin(self.theta)*1j)
+            new_state.set(i, state.get(i))
+            new_state.set(j, state.get(j) * (cos(self.theta) + sin(self.theta)*1j))
         return new_state
 
 class SWAP(Operator):
@@ -198,7 +201,7 @@ class SWAP(Operator):
                         X(self.target2,[self.target]).apply(
                             X(self.target,[self.target2]).apply(state)
                         )
-                    ) 
+                    )
         return new_state
 
 class Measurement():
