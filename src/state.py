@@ -1,5 +1,6 @@
 
 from typing import Dict
+from collections.abc import ItemsView, KeysView, ValuesView
 
 class State():
     dict : Dict[int,complex]
@@ -13,8 +14,14 @@ class State():
     def set(self, index : int, amplitude : complex) -> None:
         if amplitude == 0 and index in self.dict:
             del self.dict[index]
-        else:
+        elif amplitude != 0:
             self.dict[index] = amplitude
 
-    def items(self) -> Dict[int,complex]:
+    def items(self) -> ItemsView[int,complex]:
         return self.dict.items()
+
+    def keys(self) -> KeysView[int]:
+        return self.dict.keys()
+
+    def values(self) -> ValuesView[complex]:
+        return self.dict.values()
