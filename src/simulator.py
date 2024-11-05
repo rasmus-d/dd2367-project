@@ -78,10 +78,10 @@ class QuantumSimulator():
             else:
                 raise Exception("Really bad error")
         self.state = state
-        #probs = [(c**2).real for c in state.values()]
-        #res = choices(list(state.keys()), weights=probs, k = shots)
-        #r = []
-        #for k in range(shots):
-        #    d = {q:bool(res[k] & (1 << q)) for q, b in enumerate(meas) if b}
-        #    r.append(d)
-        return []
+        probs = [(c**2).real for c in state.values()]
+        res = choices(list(state.keys()), weights=probs, k = shots)
+        r = []
+        for k in range(shots):
+            d = {q:bool(res[k] & (1 << q)) for q, b in enumerate(meas) if b}
+            r.append(d)
+        return r
