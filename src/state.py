@@ -1,6 +1,12 @@
 
 from typing import Dict
 from collections.abc import ItemsView, KeysView, ValuesView
+from numpy import isclose
+
+# Returns true if absolute(a) <= atol
+def near_zero(amplitude : complex, atol:float = 1e-8) -> bool:
+    # relative tolerance is not relevant since we compare with 0
+    return isclose([amplitude], [0], atol=atol)[0]
 
 class State():
     dict : Dict[int,complex]
@@ -12,9 +18,10 @@ class State():
         return self.dict.get(index, 0)
 
     def set(self, index : int, amplitude : complex) -> None:
-        if amplitude == 0 and index in self.dict:
-            del self.dict[index]
-        elif amplitude != 0:
+        if near_zero(amplitude):
+            if index in self.dict:
+                del self.dict[index]
+        else:
             self.dict[index] = amplitude
 
     def items(self) -> ItemsView[int,complex]:
