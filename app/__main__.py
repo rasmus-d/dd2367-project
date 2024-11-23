@@ -10,8 +10,7 @@ def qft(n:int) -> List[Operator | Measurement]:
         queue.append(SWAP(i,n-i-1))
     return queue
 
-
-def main():
+def state_vector_example() :
     sim = QuantumSimulator(4)
     sim.add(H(0))    
     sim.add(H(1))    
@@ -26,6 +25,19 @@ def main():
     print(sim.state)
     print(res)
 
+def density_matrix_example():
+
+    state = GeneralState(initial_matrix = np.array([[0.5,0.5,0.5],
+                                                    [0.5,0.5+0.2j,0.7],
+                                                    [0.3,0.5,0.77]]))
+    print("state:\n", state.density_matrix)
+    dephasing = CompletelyDephasingChannel(3)
+    print("dephasing:\n", dephasing.choi_matrix)
+    state2 = dephasing.apply(state)
+    print("dephased state:\n", state2.density_matrix)
+
+def main():
+    density_matrix_example()
 
 if __name__ == '__main__':
     main()
