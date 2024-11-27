@@ -47,14 +47,19 @@ def density_matrix_example():
                                                          [0,0,0,0],
                                                          [0,0,0,0],
                                                          [0.5,0,0,0.5]]))
+
+    sim = MatrixSimulator(num_qubits=2, initial_state=bell_state)
+
     '''
     We apply a channel to the second qubit.
     Observe: We specify how many states the preceeding and following system has by m and n.
     We have 0 qubits after the system where we apply this channel, which means that we have one
     classical state there since 2^0 = 1. Therefore, n=1
     '''
-    depolarize_last_qubit = OnSpecificSystem(m = 2, n=1, dim=(2,2), ch=CompletelyDepolarizingChannel())
-    state2 = depolarize_last_qubit.apply(bell_state)
+    qch = QChannel(pos=1, channel=CompletelyDepolarizingChannel())
+    sim.add(qch)
+
+    state2 = sim.run()
     print("state2:\n", state2.density_matrix)
 
 def main():
