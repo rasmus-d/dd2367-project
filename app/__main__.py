@@ -25,16 +25,37 @@ def state_vector_example() :
     print(sim.state)
     print(res)
 
+def ex_dephase():
+    bell_state = GeneralState(initial_matrix = np.array([[0.5,0,0,0.5],
+                                                         [0,0,0,0],
+                                                         [0,0,0,0],
+                                                         [0.5,0,0,0.5]]))
+    dephase = CompletelyDephasingChannel(4)
+    state2 = dephase.apply(bell_state)
+    print("state2: \n", state2.density_matrix)
+
+def ex_reset():
+    state = GeneralState(initial_matrix=np.array([[0,0],[0,1]]))
+    reset = QubitResetChannel()
+    state2 = reset.apply(state)
+    print("state2: \n", state2.density_matrix)
+
+
 def density_matrix_example():
 
-    state = GeneralState(initial_matrix = np.array([[0.5,0.5,0.5],
-                                                    [0.5,0.5+0.2j,0.7],
-                                                    [0.3,0.5,0.77]]))
-    print("state:\n", state.density_matrix)
-    dephasing = CompletelyDephasingChannel(3)
-    print("dephasing:\n", dephasing.choi_matrix)
-    state2 = dephasing.apply(state)
-    print("dephased state:\n", state2.density_matrix)
+    bell_state = GeneralState(initial_matrix = np.array([[0.5,0,0,0.5],
+                                                         [0,0,0,0],
+                                                         [0,0,0,0],
+                                                         [0.5,0,0,0.5]]))
+    '''
+    We apply a channel to the second qubit.
+    Observe: We specify how many states the preceeding and following system has by m and n.
+    We have 0 qubits after the system where we apply this channel, which means that we have one
+    classical state there since 2^0 = 1. Therefore, n=1
+    '''
+    depolarize_last_qubit = OnSpecificSystem(m = 2, n=1, dim=(2,2), ch=CompletelyDepolarizingChannel())
+    state2 = depolarize_last_qubit.apply(bell_state)
+    print("state2:\n", state2.density_matrix)
 
 def main():
     density_matrix_example()
