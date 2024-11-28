@@ -3,7 +3,7 @@ from src import *
 '''
 TODO: Density matrix qft with noise. Compare with qiskit.
 '''
-def qft(n:int) -> List[Operator | Measurement]:
+def state_vector_qft(n:int) -> List[Operator | Measurement]:
     queue = []
     for q in range(n-1,-1,-1):
         queue.append(H(q))
@@ -11,6 +11,19 @@ def qft(n:int) -> List[Operator | Measurement]:
             queue.append(P(q, -pi/(2*(q-i)), control=[i]))
     for i in range(int(n/2)):
         queue.append(SWAP(i,n-i-1))
+    return queue
+
+#not tested
+def density_matrix_qft(n:int) -> List[Channel | GeneralMeasurement]:
+    queue = []
+    for q in range(n-1,-1,-1):
+        queue.append(QChannel(0, HChannel()))
+        for i in range(q-1,-1,-1):
+            pass
+            #queue.append() #TODO: Implement controlled P or controlled gates in general
+    for i in range(int(n/2)):
+        pass
+        #queue.append(QChannel(i, SwapChannel(n-i-1 - i))) #TODO: Implement swap of two qubits with arbitrary distance
     return queue
 
 def state_vector_example() :
@@ -22,11 +35,28 @@ def state_vector_example() :
     sim.add(P(0,pi/4))
     sim.add(P(1,pi/2))
     sim.add(P(2,pi))
-    sim.add(qft(4))
+    sim.add(state_vector_qft(4))
     res = sim.run()
     sim.circplot()
     print(sim.state)
     print(res)
+
+#not tested
+def density_matrix_example():
+    sim = MatrixSimulator(4)
+    sim.add(QChannel(0, HChannel()))
+    sim.add(QChannel(1, HChannel()))
+    sim.add(QChannel(2, HChannel()))
+    sim.add(QChannel(3, HChannel()))
+    sim.add(QChannel(0, PChannel(pi/4)))
+    sim.add(QChannel(1, PChannel(pi/2)))
+    sim.add(QChannel(2, PChannel(pi)))
+
+def unitary_example():
+    sim = MatrixSimulator(1)
+    sim.add(QChannel(0, HChannel()))
+    final = sim.run()
+    print("final:\n", final)
 
 def ex_dephase():
     bell_state = GeneralState(initial_matrix = np.array([[0.5,0,0,0.5],
@@ -44,7 +74,7 @@ def ex_reset():
     print("state2: \n", state2.density_matrix)
 
 
-def density_matrix_example():
+def density_matrix_example2():
 
     bell_state = GeneralState(initial_matrix = np.array([[0.5,0,0,0.5],
                                                          [0,0,0,0],
@@ -67,7 +97,7 @@ def density_matrix_example():
     print("probs:\n", probs)
 
 def main():
-    density_matrix_example()
+    unitary_example()
 
 if __name__ == '__main__':
     main()

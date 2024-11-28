@@ -1,5 +1,6 @@
 from src.general_state import GeneralState
 
+import cmath
 import numpy as np
 
 from typing import Tuple
@@ -21,7 +22,6 @@ class Channel:
     dim : tuple[int, int]
     choi_matrix : Mat
 
-    # Identity matrix of 2 state system as default
     def __init__[N:int,M:int](self, dim:tuple[int,int], choi_matrix:Mat[N,M]) -> None:
         self.dim = dim
         self.choi_matrix = choi_matrix
@@ -183,3 +183,60 @@ class OnSpecificSystem(Channel):
         return on_end_q.apply(state)
 
 
+class Unitary(Channel):
+    matrix : Mat
+    def __init__[N:int,M:int](self, matrix:Mat[N,M]) -> None:
+        self.matrix = matrix
+        super().__init__(dim = matrix.shape, choi_matrix = None)
+    
+    def apply(self, state:GeneralState) -> GeneralState:
+        mul1 = mul(state.density_matrix, np.array(np.matrix(self.matrix).H))
+        return mul(self.matrix, mul1)
+
+class HChannel(Unitary):
+    def __init__(self) -> None:
+        matrix = np.array([[1/np.sqrt(2),1/np.sqrt(2)],
+                           [1/np.sqrt(2),-1/np.sqrt(2)]]
+                           , dtype=np.complex128)
+        super().__init__(matrix = matrix)
+
+class XChannel(Unitary):
+    def __init__(self) -> None:
+        matrix = np.array([[0,1],
+                           [1,0]]
+                           , dtype=np.complex128)
+        super().__init__(matrix = matrix)
+
+class PChannel(Unitary):
+    def __init__(self, theta:float) -> None:
+        matrix = np.array([[1,0],
+                           [0,cmath.exp(1j*theta)]]
+                           , dtype=np.complex128)
+        super().__init__(matrix = matrix)
+
+class SwapChannel(Unitary):
+    def __init__(self) -> None:
+        matrix = np.array([[1,0,0,0],
+                           [0,0,1,0],
+                           [0,1,0,0],
+                           [0,0,0,1]]
+                           , dtype=np.complex128)
+        super().__init__(matrix = matrix)
+
+class UnitaryOnSpecificSystem(Unitary):
+    '''m: States in preceeding system'''
+    m : int
+    '''n: States in following system'''
+    n : int
+    '''uni: Unitary to be applied to intermediate system'''
+    uni : Unitary
+
+    def __init__(self, m:int, n:int, uni:Unitary) -> None:
+        self.m = m
+        self.n = n
+        self.uni = uni
+
+    def apply(self, state:GeneralState) -> GeneralState:
+        composed_matrix = np.kron(np.identity(self.m), np.kron(self.uni.matrix, np.identity(self.n)))
+        composed_uni = Unitary(matrix = composed_matrix)
+        return composed_uni.apply(state)

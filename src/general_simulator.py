@@ -60,7 +60,12 @@ class QChannel():
     def apply(self, num_qubits:int, state:GeneralState) -> GeneralState:
         ch_qin, ch_qout = self.qdim
         qubits_following = num_qubits - self.pos - ch_qin
-        on_sys_ch = OnSpecificSystem(m=q2s(self.pos), n=q2s(qubits_following), dim=(q2s(ch_qin),q2s(ch_qout)), ch=self.channel)
+        m = q2s(self.pos)
+        n = q2s(qubits_following)
+        if isinstance(self.channel, Unitary):
+            on_sys_ch = UnitaryOnSpecificSystem(m = m, n = n, uni=self.channel)
+        else:
+            on_sys_ch = OnSpecificSystem(m = m, n = n, dim=(q2s(ch_qin),q2s(ch_qout)), ch=self.channel)
         return on_sys_ch.apply(state)
 
 class MatrixSimulator():
