@@ -4,7 +4,7 @@ import numpy as np
 
 from typing import Tuple
 
-#TODO: Put this somewhere so that it can be used in general_state.py also
+#TODO: Put this somewhere so that it can be used in general_state.py and general_simulator.py also
 type Matrix[N:int,M:int,D:np.generic] = np.ndarray[tuple[N,M],np.dtype[D]]
 type Mat[N:int,M:int] = Matrix[N,M,np.complex128]
 
@@ -47,7 +47,10 @@ class Channel:
 
         return GeneralState(res)
 
-''' Zeroes off diagonal entries. '''
+'''
+Zeroes off diagonal entries.
+This is equivalent to a standard basis measurement of the system.
+'''
 class CompletelyDephasingChannel(Channel): 
     def __init__(self, dim:int) -> None:
         choi_matrix = np.zeros((dim*dim,dim*dim), dtype=np.complex128)
@@ -58,7 +61,8 @@ class CompletelyDephasingChannel(Channel):
 
         super().__init__(dim = (dim, dim), choi_matrix = choi_matrix)
 
-''' Models extreme noise. Outputs the completley mixed state. '''
+''' Models extreme noise. Outputs the completley mixed state.
+TODO: parameters for number of states and degree of depolarization.'''
 class CompletelyDepolarizingChannel(Channel):
     def __init__(self) -> None:
         choi_matrix = np.array([[0.5,0,0,0],

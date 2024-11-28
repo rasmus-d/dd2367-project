@@ -1,5 +1,8 @@
 from src import *
 
+'''
+TODO: Density matrix qft with noise. Compare with qiskit.
+'''
 def qft(n:int) -> List[Operator | Measurement]:
     queue = []
     for q in range(n-1,-1,-1):
@@ -58,9 +61,10 @@ def density_matrix_example():
     '''
     qch = QChannel(pos=1, channel=CompletelyDepolarizingChannel())
     sim.add(qch)
+    sim.add(StandardBasisMeasurement(2))
 
-    state2 = sim.run()
-    print("state2:\n", state2.density_matrix)
+    probs = sim.run()
+    print("probs:\n", probs)
 
 def main():
     density_matrix_example()
