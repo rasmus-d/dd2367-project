@@ -17,13 +17,11 @@ def state_vector_qft(n:int) -> List[Operator | Measurement]:
 def density_matrix_qft(n:int) -> List[Channel | GeneralMeasurement]:
     queue = []
     for q in range(n-1,-1,-1):
-        queue.append(QChannel(0, HChannel()))
+        queue.append(QChannel(q, HChannel()))
         for i in range(q-1,-1,-1):
-            pass
-            #queue.append() #TODO: Implement controlled P or controlled gates in general
+            queue.append(QControlledU(i, q, PChannel(-pi/(2*(q-i))))) #TODO: Implement controlled P or controlled gates in general. Control always < target!
     for i in range(int(n/2)):
-        pass
-        #queue.append(QChannel(i, SwapChannel(n-i-1 - i))) #TODO: Implement swap of two qubits with arbitrary distance
+        queue.append(QChannel(i, SwapChannel(n-i-1 - i))) #TODO: Implement swap of two qubits with arbitrary distance
     return queue
 
 def state_vector_example() :
@@ -51,12 +49,29 @@ def density_matrix_example():
     sim.add(QChannel(0, PChannel(pi/4)))
     sim.add(QChannel(1, PChannel(pi/2)))
     sim.add(QChannel(2, PChannel(pi)))
+    sim.add(density_matrix_qft(4))
+    sim.add(StandardBasisMeasurement(4))
+    res = sim.run()
+    #If measurement:
+    print("Density matrix res: \n", res)
+    #If no measurement:
+    #print("res.density_matrix: \n", res.density_matrix)
 
-def unitary_example():
-    sim = MatrixSimulator(1)
+def cp_test():
+    sim = MatrixSimulator(2)
     sim.add(QChannel(0, HChannel()))
+    sim.add(QChannel(1, HChannel()))
+    sim.add(QControlledU(0, 1, PChannel(pi/2)))
     final = sim.run()
-    print("final:\n", final)
+    print("final: \n", final.density_matrix)
+
+def swap_test():
+    sim = MatrixSimulator(2)
+    sim.add(QChannel(0, HChannel()))
+    sim.add(QChannel(0, SwapChannel(1)))
+    final = sim.run()
+    print("final: \n", final.density_matrix)
+
 
 def ex_dephase():
     bell_state = GeneralState(initial_matrix = np.array([[0.5,0,0,0.5],
@@ -97,8 +112,7 @@ def density_matrix_example2():
     print("probs:\n", probs)
 
 def main():
-    unitary_example()
-
+    density_matrix_example()
 if __name__ == '__main__':
     main()
 

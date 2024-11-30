@@ -80,9 +80,9 @@ class QubitResetChannel(Channel):
                                 [0,0,0,0]], dtype=np.complex128)
         super().__init__(dim = (2,2), choi_matrix = choi_matrix)
 
-class OnStartSystem(Channel):
+class OnLeftSystem(Channel):
     '''
-    n: number of states in the following 
+    n: number of states in the right 
        subsystem Z that is not changed
     ch_phi: choi channel that is to be applied to X
     '''
@@ -120,9 +120,9 @@ class OnStartSystem(Channel):
 
         return GeneralState(res)
 
-class OnEndSystem(Channel):
+class OnRightSystem(Channel):
     '''
-    m: number of states in the preceeding 
+    m: number of states in the left 
        subsystem Z that is not changed
     choi_phi: choi channel that is to be applied to X
     '''
@@ -163,24 +163,26 @@ class OnEndSystem(Channel):
 Applies a channel ch to a specific intermediate system.
 '''
 class OnSpecificSystem(Channel):
-    '''m: States in preceeding system'''
-    m : int
-    '''n: States in following system'''
+    '''n: States in right system'''
     n : int
+
+    '''m: States in left system'''
+    m : int
+
     '''ch: Channel to be applied to intermediate system'''
     ch : Channel
 
-    def __init__(self, m:int, n:int, dim:tuple[int,int], ch:Channel) -> None:
+    def __init__(self, n:int, m:int, dim:tuple[int,int], ch:Channel) -> None:
         indim, outdim = dim
         self.dim = (indim * m * n, outdim * n * m)
-        self.m = m
         self.n = n
+        self.m = m
         self.ch = ch
 
     def apply(self, state:GeneralState) -> GeneralState:
-        on_start_q = OnStartSystem(n = self.n, ch_phi=self.ch)
-        on_end_q = OnEndSystem(m = self.m, ch_phi=on_start_q)
-        return on_end_q.apply(state)
+        on_left_q = OnLeftSystem(n = self.n, ch_phi=self.ch)
+        on_right_q = OnRightSystem(m = self.m, ch_phi=on_left_q)
+        return on_right_q.apply(state)
 
 
 class Unitary(Channel):
@@ -188,10 +190,10 @@ class Unitary(Channel):
     def __init__[N:int,M:int](self, matrix:Mat[N,M]) -> None:
         self.matrix = matrix
         super().__init__(dim = matrix.shape, choi_matrix = None)
-    
+
     def apply(self, state:GeneralState) -> GeneralState:
         mul1 = mul(state.density_matrix, np.array(np.matrix(self.matrix).H))
-        return mul(self.matrix, mul1)
+        return GeneralState(initial_matrix = mul(self.matrix, mul1))
 
 class HChannel(Unitary):
     def __init__(self) -> None:
@@ -215,28 +217,37 @@ class PChannel(Unitary):
         super().__init__(matrix = matrix)
 
 class SwapChannel(Unitary):
-    def __init__(self) -> None:
-        matrix = np.array([[1,0,0,0],
-                           [0,0,1,0],
-                           [0,1,0,0],
-                           [0,0,0,1]]
-                           , dtype=np.complex128)
+    def __init__(self, qdist=1) -> None:
+        qubits = qdist+1
+        states = pow(2, qubits)
+        matrix = np.zeros((states, states), dtype=np.complex128)
+        for old_state in range(states):
+            old_bin = list(('{0:0'+str(qubits)+'b}').format(old_state))
+            new_bin = old_bin.copy()
+            new_bin[0] = old_bin[qubits-1]
+
+            new_bin[qubits-1] = old_bin[0]
+            new_state = int("".join(str(x) for x in new_bin), 2)
+            matrix[new_state][old_state] = 1
         super().__init__(matrix = matrix)
 
 class UnitaryOnSpecificSystem(Unitary):
-    '''m: States in preceeding system'''
-    m : int
-    '''n: States in following system'''
+    '''n: States in right system'''
     n : int
+    '''m: States in left system'''
+    m : int
     '''uni: Unitary to be applied to intermediate system'''
     uni : Unitary
 
-    def __init__(self, m:int, n:int, uni:Unitary) -> None:
-        self.m = m
+    def __init__(self, n:int, m:int, uni:Unitary) -> None:
         self.n = n
+        self.m = m
         self.uni = uni
 
-    def apply(self, state:GeneralState) -> GeneralState:
+    def apply(self, state:GeneralState, ret_channel:bool = False) -> GeneralState:
         composed_matrix = np.kron(np.identity(self.m), np.kron(self.uni.matrix, np.identity(self.n)))
         composed_uni = Unitary(matrix = composed_matrix)
-        return composed_uni.apply(state)
+        if ret_channel:
+            return composed_uni
+        else:
+            return composed_uni.apply(state)

@@ -11,7 +11,8 @@ type Matrix[N:int,M:int,D:np.generic] = np.ndarray[tuple[N,M],np.dtype[D]]
 type Mat[N:int,M:int] = Matrix[N,M,np.complex128]
 
 def q2s (q:int) -> int:
-    return pow(2, q)
+    s = pow(2, q)
+    return s
 
 def s2q (s:int) -> int:
     #TODO: Throw error if s is not 2-exponential
@@ -47,7 +48,9 @@ class StandardBasisMeasurement(GeneralMeasurement):
         super().__init__(matrices = matrices)
 
 class QChannel():
+    '''Position of channel'''
     pos:int
+    '''Dimensions of channel'''
     qdim:tuple[int,int]
     channel:Channel
 
@@ -57,16 +60,48 @@ class QChannel():
         self.qdim = (s2q(num_states_in), s2q(num_states_out))
         self.channel = channel
 
-    def apply(self, num_qubits:int, state:GeneralState) -> GeneralState:
+    def apply(self, num_qubits:int, state:GeneralState, ret_channel:bool = False) -> GeneralState:
         ch_qin, ch_qout = self.qdim
-        qubits_following = num_qubits - self.pos - ch_qin
-        m = q2s(self.pos)
-        n = q2s(qubits_following)
+
+        qubits_right = self.pos
+        qubits_left = num_qubits - self.pos - ch_qin
+
+        n = q2s(qubits_right)
+        m = q2s(qubits_left)
+
         if isinstance(self.channel, Unitary):
             on_sys_ch = UnitaryOnSpecificSystem(m = m, n = n, uni=self.channel)
         else:
             on_sys_ch = OnSpecificSystem(m = m, n = n, dim=(q2s(ch_qin),q2s(ch_qout)), ch=self.channel)
-        return on_sys_ch.apply(state)
+        if ret_channel:
+            return on_sys_ch.apply(state, ret_channel = True)
+        else:
+            return on_sys_ch.apply(state)
+
+'''
+Assume pos_control < pos_target
+'''
+class QControlledU(QChannel):
+    pos_control:int
+    pos_target:int
+    unitary:Unitary
+
+    def __init__(self, pos_control:int, pos_target:int, unitary:Unitary):
+        self.pos_control = pos_control
+        self.pos_target = pos_target
+        self.unitary = unitary
+
+    def apply(self, num_qubits:int, state:GeneralState) -> GeneralState:
+        extended_target_qch = QChannel(self.pos_target-self.pos_control-1, self.unitary)
+        ex_target_qdim, _ = extended_target_qch.qdim
+        extended_target_matrix = extended_target_qch.apply(extended_target_qch.pos + ex_target_qdim, None, ret_channel=True).matrix
+
+        term1 = np.kron(np.identity(np.pow(2, extended_target_qch.pos + ex_target_qdim)), np.array([[1,0],[0,0]], dtype=np.complex128))
+        term2 = np.kron(extended_target_matrix, np.array([[0,0],[0,1]], dtype=np.complex128))
+        controlled_matrix = term1 + term2
+
+        controlled_ch = QChannel(self.pos_control, Unitary(controlled_matrix))
+        return controlled_ch.apply(num_qubits, state)
 
 class MatrixSimulator():
     num_qubits : int
@@ -74,9 +109,10 @@ class MatrixSimulator():
     #TODO: Implement measurements and add to union
     operator_queue : List[QChannel]
 
-    def __init__(self, num_qubits:int, initial_state:GeneralState = GeneralState()):
+    def __init__(self, num_qubits:int = 2, initial_state:GeneralState = None):
         self.num_qubits = num_qubits
-        self.state = initial_state
+        self.state = initial_state if initial_state != None else GeneralState(dim = q2s(num_qubits))
+
         self.operator_queue = []
 
     def add(self, op : Union[Union[QChannel],List[Union[QChannel]]]) -> None:
