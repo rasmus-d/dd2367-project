@@ -78,7 +78,7 @@ class QuantumSimulator():
             else:
                 raise Exception("Really bad error")
         self.state = state
-        probs = [(c**2).real for c in state.values()]
+        probs = [abs(c)**2 for c in state.values()]
         res = choices(list(state.keys()), weights=probs, k = shots)
         r = []
         for k in range(shots):
