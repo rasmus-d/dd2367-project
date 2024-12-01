@@ -13,7 +13,6 @@ def state_vector_qft(n:int) -> List[Operator | Measurement]:
         queue.append(SWAP(i,n-i-1))
     return queue
 
-#not tested
 def density_matrix_qft(n:int) -> List[Channel | GeneralMeasurement]:
     queue = []
     for q in range(n-1,-1,-1):
@@ -39,18 +38,16 @@ def state_vector_example() :
     print(sim.state)
     print(res)
 
-#not tested
 def density_matrix_example():
-    sim = MatrixSimulator(4)
-    sim.add(QChannel(0, HChannel()))
-    sim.add(QChannel(1, HChannel()))
-    sim.add(QChannel(2, HChannel()))
-    sim.add(QChannel(3, HChannel()))
-    sim.add(QChannel(0, PChannel(pi/4)))
-    sim.add(QChannel(1, PChannel(pi/2)))
-    sim.add(QChannel(2, PChannel(pi)))
-    sim.add(density_matrix_qft(4))
-    sim.add(StandardBasisMeasurement(4))
+    size = 4
+    sim = MatrixSimulator(size)
+    for i in range(size):
+        sim.add(QChannel(i, HChannel()))
+    for i in range(size-1):
+        sim.add(QChannel(i, PChannel(pi/2**(size-2-i))))
+
+    sim.add(density_matrix_qft(size))
+    sim.add(StandardBasisMeasurement(size))
     res = sim.run()
     #If measurement:
     print("Density matrix res: \n", res)
