@@ -121,12 +121,13 @@ class MatrixSimulator():
         else:
             self.operator_queue.append(op)
 
-    def run(self) -> Union[GeneralState, np.ndarray]:
+    def run(self, noise:bool=False, noise_level = 0) -> Union[GeneralState, np.ndarray]:
         state = self.state
         for op in self.operator_queue:
             if isinstance(op,QChannel):
                 state = op.apply(self.num_qubits, state)
-                state = QChannel(0, DepolarizingChannel(0.01, qdim=self.num_qubits)).apply(self.num_qubits, state)
+                if noise:
+                    state = QChannel(0, DepolarizingChannel(noise_level, qdim=self.num_qubits)).apply(self.num_qubits, state)
             elif isinstance(op, GeneralMeasurement):
                 problist = op.measure(state)
                 return problist

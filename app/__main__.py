@@ -1,4 +1,5 @@
 from src import *
+import time
 
 '''
 TODO: Density matrix qft with noise. Compare with qiskit.
@@ -48,7 +49,15 @@ def density_matrix_example():
 
     sim.add(density_matrix_qft(size))
     sim.add(StandardBasisMeasurement(size))
-    res = sim.run()
+
+    iter = 10
+    start_run = time.time()
+    for i in range(iter):
+        sim.state = GeneralState(size)
+        res = sim.run(noise=True, noise_level=0.03)
+    end_run = time.time()
+    print("Time run() :", (end_run-start_run)/iter * 10**3, "ms")
+
     #If measurement:
     print("Density matrix res: \n", res)
     #If no measurement:
