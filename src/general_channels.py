@@ -45,13 +45,21 @@ class Channel:
             rows_cols = [*range(i * output_dim, (i+1) * output_dim)]
             res += mul_res[np.ix_(rows_cols,rows_cols)]
 
-        return GeneralState(res)
+        return GeneralState(initial_matrix=res)
+
+class IdentityChannel(Channel):
+    def __init__(self, dim:int) -> None:
+        choi_matrix = np.zeros((dim*dim, dim*dim), dtype=np.complex128)
+        for a in range(dim):
+            for b in range(dim):
+                choi_matrix[a*dim + a][b*dim + b] = 1
+        super().__init__((dim, dim), choi_matrix)
 
 '''
 Zeroes off diagonal entries.
 This is equivalent to a standard basis measurement of the system.
 '''
-class CompletelyDephasingChannel(Channel): 
+class CompletelyDephasingChannel(Channel):
     def __init__(self, dim:int) -> None:
         choi_matrix = np.zeros((dim*dim,dim*dim), dtype=np.complex128)
 
@@ -61,15 +69,19 @@ class CompletelyDephasingChannel(Channel):
 
         super().__init__(dim = (dim, dim), choi_matrix = choi_matrix)
 
-''' Models extreme noise. Outputs the completley mixed state.
-TODO: parameters for number of states and degree of depolarization.'''
-class CompletelyDepolarizingChannel(Channel):
-    def __init__(self) -> None:
-        choi_matrix = np.array([[0.5,0,0,0],
-                                [0,0.5,0,0],
-                                [0,0,0.5,0],
-                                [0,0,0,0.5]], dtype=np.complex128)
-        super().__init__(dim = (2,2), choi_matrix = choi_matrix)
+''' Models noise. epsilon=1 outputs the completley mixed state.'''
+class DepolarizingChannel(Channel):
+    def __init__(self, epsilon:float, qdim = 1) -> None:
+        states = 2**qdim
+        dephase_matrix = np.zeros((states*states, states*states), dtype=np.complex128)
+        for a in range (states*states):
+            dephase_matrix[a][a] = 1/states
+
+        identity_matrix = IdentityChannel(states).choi_matrix
+
+        matrix = dephase_matrix * epsilon + identity_matrix * (1-epsilon)
+
+        super().__init__(dim = (states,states), choi_matrix = matrix)
 
 ''' Set one qubit to 0. '''
 class QubitResetChannel(Channel):
@@ -111,14 +123,14 @@ class OnLeftSystem(Channel):
                 rho_ab = state.density_matrix[np.ix_(rows,cols)]
                 # TODO: If we forbid non-density matrices as a GeneralState we can pass a parameter
                 # that allows this again (rho_ab is not a density matrix)
-                phi_rho_ab = (self.ch_phi.apply(GeneralState(rho_ab))).density_matrix
+                phi_rho_ab = (self.ch_phi.apply(GeneralState(initial_matrix=rho_ab))).density_matrix
                 a_bar_b_ket = np.zeros((self.n, self.n), dtype=np.complex128)
                 a_bar_b_ket[a][b] = 1
                 kron = np.kron(phi_rho_ab, a_bar_b_ket)
 
                 res += kron
 
-        return GeneralState(res)
+        return GeneralState(initial_matrix=res)
 
 class OnRightSystem(Channel):
     '''
@@ -149,14 +161,14 @@ class OnRightSystem(Channel):
                 rho_ab = state.density_matrix[np.ix_(rows,cols)]
                 # TODO: If we forbid non-density matrices as a GeneralState we can pass a parameter
                 # that allows this again (rho_ab is not a density matrix)
-                phi_rho_ab = (self.ch_phi.apply(GeneralState(rho_ab))).density_matrix
+                phi_rho_ab = (self.ch_phi.apply(GeneralState(initial_matrix=rho_ab))).density_matrix
                 a_bar_b_ket = np.zeros((self.m, self.m), dtype=np.complex128)
                 a_bar_b_ket[a][b] = 1
                 kron = np.kron(a_bar_b_ket, phi_rho_ab)
 
                 res += kron
 
-        return GeneralState(res)
+        return GeneralState(initial_matrix=res)
 
 #TODO: Maybe make this one the superclass, or maybe it's good to have the simple case there.
 '''

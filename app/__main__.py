@@ -57,60 +57,6 @@ def density_matrix_example():
     #If no measurement:
     #print("res.density_matrix: \n", res.density_matrix)
 
-def cp_test():
-    sim = MatrixSimulator(2)
-    sim.add(QChannel(0, HChannel()))
-    sim.add(QChannel(1, HChannel()))
-    sim.add(QControlledU(0, 1, PChannel(pi/2)))
-    final = sim.run()
-    print("final: \n", final.density_matrix)
-
-def swap_test():
-    sim = MatrixSimulator(2)
-    sim.add(QChannel(0, HChannel()))
-    sim.add(QChannel(0, SwapChannel(1)))
-    final = sim.run()
-    print("final: \n", final.density_matrix)
-
-
-def ex_dephase():
-    bell_state = GeneralState(initial_matrix = np.array([[0.5,0,0,0.5],
-                                                         [0,0,0,0],
-                                                         [0,0,0,0],
-                                                         [0.5,0,0,0.5]]))
-    dephase = CompletelyDephasingChannel(4)
-    state2 = dephase.apply(bell_state)
-    print("state2: \n", state2.density_matrix)
-
-def ex_reset():
-    state = GeneralState(initial_matrix=np.array([[0,0],[0,1]]))
-    reset = QubitResetChannel()
-    state2 = reset.apply(state)
-    print("state2: \n", state2.density_matrix)
-
-
-def density_matrix_example2():
-
-    bell_state = GeneralState(initial_matrix = np.array([[0.5,0,0,0.5],
-                                                         [0,0,0,0],
-                                                         [0,0,0,0],
-                                                         [0.5,0,0,0.5]]))
-
-    sim = MatrixSimulator(num_qubits=2, initial_state=bell_state)
-
-    '''
-    We apply a channel to the second qubit.
-    Observe: We specify how many states the preceeding and following system has by m and n.
-    We have 0 qubits after the system where we apply this channel, which means that we have one
-    classical state there since 2^0 = 1. Therefore, n=1
-    '''
-    qch = QChannel(pos=1, channel=CompletelyDepolarizingChannel())
-    sim.add(qch)
-    sim.add(StandardBasisMeasurement(2))
-
-    probs = sim.run()
-    print("probs:\n", probs)
-
 def main():
     density_matrix_example()
 if __name__ == '__main__':

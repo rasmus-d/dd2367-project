@@ -111,7 +111,7 @@ class MatrixSimulator():
 
     def __init__(self, num_qubits:int = 2, initial_state:GeneralState = None):
         self.num_qubits = num_qubits
-        self.state = initial_state if initial_state != None else GeneralState(dim = q2s(num_qubits))
+        self.state = initial_state if initial_state != None else GeneralState(qdim = num_qubits)
 
         self.operator_queue = []
 
@@ -126,6 +126,7 @@ class MatrixSimulator():
         for op in self.operator_queue:
             if isinstance(op,QChannel):
                 state = op.apply(self.num_qubits, state)
+                state = QChannel(0, DepolarizingChannel(0.01, qdim=self.num_qubits)).apply(self.num_qubits, state)
             elif isinstance(op, GeneralMeasurement):
                 problist = op.measure(state)
                 return problist
