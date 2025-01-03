@@ -38,7 +38,7 @@ class QuantumSimulator():
         phases = {k:np.angle(v) for k,v in self.state.items()}
         rows = int(math.ceil(n_states / 8.0))
         cols = min(n_states, 8)
-        fig, axs = plt.subplots(rows, cols)
+        fig, axs = plt.subplots(rows, cols, squeeze=False)
         for row in range(rows):
             for col in range(cols):
                 # amplitude area
