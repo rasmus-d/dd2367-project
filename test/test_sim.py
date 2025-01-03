@@ -6,10 +6,6 @@ import unittest
 
 from src import * 
 
-def showplot(qc):
-    qc.circplot()
-    plt.savefig('test.png')
-    plt.close()
 
 class TestQuantumSimulator(unittest.TestCase):
 
@@ -165,9 +161,15 @@ class TestQuantumSimulator(unittest.TestCase):
     
     def test_control(self):
         qc = QuantumSimulator(3, State({1: 1}))
-        qc.add(SWAP(0, 1, [3]))
+        qc.add(SWAP(0, 1, [2]))
         qc.run()
-        showplot(qc)
+        self.assertEqual(qc.state.dict[1], 1)
+
+        
+        qc = QuantumSimulator(3, State({5: 1}))
+        qc.add(SWAP(0, 1, [2]))
+        qc.run()
+        self.assertEqual(qc.state.dict[6], 1)
 
 if __name__ == '__main__':
     unittest.main()

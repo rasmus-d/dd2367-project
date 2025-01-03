@@ -197,9 +197,9 @@ class SWAP(Operator):
         super().__init__(target, control)
     def apply(self, state: State) -> State:
         # SWAP(x,y) = CNOT(x,y) * CNOT(y,x) * CNOT(x,y)
-        new_state = X(self.target,[self.target2]).apply(
-                        X(self.target2,[self.target]).apply(
-                            X(self.target,[self.target2]).apply(state)
+        new_state = X(self.target,self.control + [self.target2]).apply(
+                        X(self.target2,self.control + [self.target]).apply(
+                            X(self.target,self.control + [self.target2]).apply(state)
                         )
                     )
         return new_state
