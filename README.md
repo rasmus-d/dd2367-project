@@ -1,4 +1,4 @@
-# Quantum computer simulator
+# Two Quantum computer simulators
 
 
 ## Project structure
@@ -9,7 +9,9 @@ Contains the project requirements; third-party libraries.
 
 ### src - quantum simulator library
 
-Cotains all code and modules that make up the core of the simulator.
+Cotains all code and modules that make up the core of the two simulators.
+Files prefixed with ```general_``` relates to the density matrix simulator using Choi matrix representation for the Channels.
+The other files relates to the simulator using sparse vector representation.
 
 ### app - quantum simulator app/driver
 
